@@ -2,6 +2,22 @@
 
 > 需求基线：根目录 `QueryPilot_对话式数据分析平台_PRD_v0.1.md`。本文件每批编码后更新。
 
+## 当前阶段：第三阶段（Text-to-SQL）— ✅ 已完成
+
+阶段目标（PRD §11 阶段3）：查询计划、SQL 生成、安全校验、只读执行 → 「能稳定完成单轮查询」。新增 Python `agent/` 服务（FastAPI + SQLGlot）。
+
+| 批次 | 内容 | 状态 | 验证 |
+|---|---|---|---|
+| B10 | agent 脚手架 + SQL 安全校验器（SQLGlot） | ✅ | 12 pytest + 冒烟：拒绝 DROP/UPDATE/多语句/越权表/越权字段/危险函数 |
+| B11 | 查询计划模型 + 确定性 SQL 生成 | ✅ | 8 pytest：plan→SQL 正确，生成 SQL 全部过校验 |
+| B12 | 只读执行 + 错误分类 + `/query` 端点 | ✅ | 4 pytest + e2e：真实查分析库（趋势/排行/过滤/报错） |
+
+**第三阶段验收**：
+- ✅ SQL 安全：单语句、仅 SELECT、表/列白名单、危险函数拒绝（AST 层）；执行层只读账号 `qp_analysis_ro` + `statement_timeout=30s`。
+- ✅ 单轮查询：`POST /query`（query plan）→ 生成 SQL → 校验 → 只读执行 → 返回列类型+行+耗时。
+- ✅ 演示问题可跑通：「近 7 天每日实付销售额」「近 30 天各省销售额前 5」「华东地区按省份」。
+- ✅ 未知指标/字段/危险符 → 结构化报错，不执行。
+
 ## 当前阶段：第二阶段（语义元数据）— ✅ 已完成
 
 阶段目标（PRD §11 阶段2）：Schema 扫描、指标口径、权限白名单、召回接口 → 「能找到与业务问题关联的表字段」。
@@ -57,8 +73,9 @@
 - ✅ 管理员编辑：`PUT /api/admin/metrics/{id}`、`PUT /api/admin/columns/{id}`；ADMIN 角色才可访问（demo/ANALYST 返回 403）。
 - ✅ 白名单：召回与 schema 只返回 `is_accessible=true` 的表。
 
-## 下一步（第三阶段：Text-to-SQL，PRD §11 阶段3）
+## 下一步（第四阶段：Agent 与图表，PRD §11 阶段4）
 
-1. 查询计划（Query Plan）：意图/指标/维度/过滤/时间范围的结构化建模。
-2. SQL 生成（SQLGlot）+ 安全校验（AST、表白名单、只读、多语句/危险函数拒绝、行数/超时限制）。
-3. 只读执行（复用 `qp_analysis_ro` 账号）+ 错误分类与受限修复。
+1. 会话与消息接口（Java：conversations/messages/query_runs 表已建，接接口）。
+2. 意图解析 → QueryPlan（接阶段 2 召回 + 阶段 3 生成；LLM 可替换，先用确定性解析）。
+3. SSE 事件流 + 前端对话页 + ECharts 图表 + 结论生成。
+4. 串联全链路：前端提问 → Java 会话 → Agent 查询 → 图表/SQL/结论。
