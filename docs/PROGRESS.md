@@ -2,7 +2,18 @@
 
 > 需求基线：根目录 `QueryPilot_对话式数据分析平台_PRD_v0.1.md`。本文件每批编码后更新。
 
-## 当前阶段：第一阶段（基础工程）— ✅ 已完成
+## 当前阶段：第二阶段（语义元数据）— ✅ 已完成
+
+阶段目标（PRD §11 阶段2）：Schema 扫描、指标口径、权限白名单、召回接口 → 「能找到与业务问题关联的表字段」。
+
+| 批次 | 内容 | 状态 | 验证 |
+|---|---|---|---|
+| B6 | 元数据实体/仓库 + Flyway V4（synonyms）+ `/api/datasets/{id}/schema` | ✅ | 7 测试通过；e2e 返回 5 表/31 字段/4 关系/3 指标（含同义词） |
+| B7 | 召回接口 `/api/datasets/{id}/semantic-search` | ✅ | 「实付销售额」→paid_amount+指标；「省份」→province；「华东地区」→region |
+| B8 | Schema 扫描（`scripts/schema_scan.py` 核对/同步） | ✅ | 5 表一致，无缺失/多余 |
+| B9 | 管理员语义编辑（PUT /api/admin/*）+ ADMIN 权限 | ✅ | demo(ANALYST)→403，admin→200 |
+
+## 第一阶段（基础工程）— ✅ 已完成
 
 阶段目标（PRD §11 阶段1）：前后端脚手架、登录、数据库、模拟电商数据 → 「页面可登录、可查询数据集」。
 
@@ -38,8 +49,16 @@
 - `docker/init` 脚本仅首次初始化数据卷时执行，改动需 `docker compose down -v` 重建。
 - 本机无全局 Maven/psql：后端用 Maven Wrapper，DB 校验用容器内 psql。
 
-## 下一步（第二阶段：语义元数据，PRD §11 阶段2）
+## 第二阶段验收（PRD §11 阶段2「能找到与业务问题关联的表字段」）
 
-1. Schema 扫描/同步：将分析库实际表结构对齐到元数据库（或反向校验白名单）。
-2. 指标口径、权限白名单、召回接口（关键词/词典召回，pgvector 可选不阻塞）。
-3. 数据语义管理页（管理员）：表/字段/关系/指标维护。
+- ✅ 元数据读取：`GET /api/datasets/{id}/schema` 返回授权可见的 5 表/31 字段/4 关系/3 指标（含同义词）。
+- ✅ 召回：`GET /api/datasets/{id}/semantic-search?q=实付销售额` → 命中「实付销售额」指标 + `orders.paid_amount`；「省份」→ `customers.province`；「华东地区」→ `customers.region`。
+- ✅ Schema 扫描：`python scripts/schema_scan.py` 核对分析库↔元库，5 表一致无差异；`--sync` 可补种缺失项。
+- ✅ 管理员编辑：`PUT /api/admin/metrics/{id}`、`PUT /api/admin/columns/{id}`；ADMIN 角色才可访问（demo/ANALYST 返回 403）。
+- ✅ 白名单：召回与 schema 只返回 `is_accessible=true` 的表。
+
+## 下一步（第三阶段：Text-to-SQL，PRD §11 阶段3）
+
+1. 查询计划（Query Plan）：意图/指标/维度/过滤/时间范围的结构化建模。
+2. SQL 生成（SQLGlot）+ 安全校验（AST、表白名单、只读、多语句/危险函数拒绝、行数/超时限制）。
+3. 只读执行（复用 `qp_analysis_ro` 账号）+ 错误分类与受限修复。
