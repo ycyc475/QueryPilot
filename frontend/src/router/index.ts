@@ -10,6 +10,7 @@ const router = createRouter({
       component: () => import('@/layouts/MainLayout.vue'),
       children: [
         { path: '', name: 'workbench', component: () => import('@/views/WorkbenchView.vue') },
+        { path: 'conversations/:id', name: 'conversation', component: () => import('@/views/ChatView.vue') },
       ],
     },
   ],

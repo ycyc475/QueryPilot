@@ -2,6 +2,23 @@
 
 > 需求基线：根目录 `QueryPilot_对话式数据分析平台_PRD_v0.1.md`。本文件每批编码后更新。
 
+## 当前阶段：第四阶段（Agent 与图表）— ✅ 已完成
+
+阶段目标（PRD §11 阶段4）：问答返回图表、SQL、结论。意图解析先确定性（无 LLM，PRD §12#7）。
+
+| 批次 | 内容 | 状态 | 验证 |
+|---|---|---|---|
+| B13 | agent 意图解析（NL→QueryPlan）+ 图表推荐 + 结论 + `/ask` | ✅ | 33 pytest；e2e 返回图表+SQL+结论 |
+| B14 | Java 会话/消息/query_run + 串联 agent（HTTP） | ✅ | 全链路 e2e：提问→agent→图表/SQL/结论→历史 |
+| B15 | 前端对话页 + ECharts 图表 + SQL/明细/结论展示 | ✅ | 全栈冒烟：前端代理→后端→agent，bar 图+结论+明细 |
+
+**第四阶段验收（PRD §11 阶段4「问答返回图表、SQL、结论」）**：
+- ✅ 浏览器提问「过去30天每天的订单量趋势」→ line 图 + SQL + 结论 + 明细。
+- ✅ 「上个月各省销售额前5」→ bar 图（广东居首）+ 结论 + 明细。
+- ✅ 会话历史：user/assistant 消息留存，可回看。
+- ✅ query_run 落库：question/sql/query_plan/chart_spec/status/duration/row_count。
+- ⏳ 待后置：SSE 流式、真实 LLM 意图解析（当前确定性，PRD §12#7 允许）。
+
 ## 当前阶段：第三阶段（Text-to-SQL）— ✅ 已完成
 
 阶段目标（PRD §11 阶段3）：查询计划、SQL 生成、安全校验、只读执行 → 「能稳定完成单轮查询」。新增 Python `agent/` 服务（FastAPI + SQLGlot）。
@@ -73,9 +90,9 @@
 - ✅ 管理员编辑：`PUT /api/admin/metrics/{id}`、`PUT /api/admin/columns/{id}`；ADMIN 角色才可访问（demo/ANALYST 返回 403）。
 - ✅ 白名单：召回与 schema 只返回 `is_accessible=true` 的表。
 
-## 下一步（第四阶段：Agent 与图表，PRD §11 阶段4）
+## 下一步（第五阶段：多轮与可靠性，PRD §11 阶段5）
 
-1. 会话与消息接口（Java：conversations/messages/query_runs 表已建，接接口）。
-2. 意图解析 → QueryPlan（接阶段 2 召回 + 阶段 3 生成；LLM 可替换，先用确定性解析）。
-3. SSE 事件流 + 前端对话页 + ECharts 图表 + 结论生成。
-4. 串联全链路：前端提问 → Java 会话 → Agent 查询 → 图表/SQL/结论。
+1. 多轮上下文：结构化 `analysis_context`（metric/time_range/dimensions/filters）继承与合并。
+2. 错误恢复：SQL 错误分类 + 有限次数修复（F11）。
+3. 查询审计页（管理员）：query_runs 历史、耗时、失败原因。
+4. SSE 事件流（可选，当前同步返回已够演示）。

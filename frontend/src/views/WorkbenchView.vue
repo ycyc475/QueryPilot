@@ -14,27 +14,32 @@
           <div class="ds-name">{{ d.name }}</div>
           <div class="ds-desc">{{ d.description }}</div>
           <div class="ds-source">数据源：{{ d.source.name }}（{{ d.source.dbType }}）</div>
+          <el-button class="start-btn" type="primary" @click.stop="start(d)">开始分析</el-button>
         </el-card>
       </div>
-    </el-card>
-
-    <el-card class="placeholder">
-      <el-empty description="对话式分析将在后续阶段（Agent 模块）实现，当前阶段完成登录与数据集查询" />
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { listDatasets } from '@/api/dataset'
+import { createConversation } from '@/api/conversation'
 import type { Dataset } from '@/types/api'
 
+const router = useRouter()
 const datasets = ref<Dataset[]>([])
 const selectedId = ref<number | null>(null)
 const loading = ref(false)
 
 function select(d: Dataset) {
   selectedId.value = d.id
+}
+
+async function start(d: Dataset) {
+  const res = await createConversation(d.id)
+  router.push({ name: 'conversation', params: { id: res.data.id } })
 }
 
 onMounted(async () => {
@@ -76,8 +81,9 @@ onMounted(async () => {
 .ds-source {
   color: #909399;
   font-size: 12px;
+  margin-bottom: 12px;
 }
-.placeholder {
-  margin-top: 16px;
+.start-btn {
+  width: 100%;
 }
 </style>

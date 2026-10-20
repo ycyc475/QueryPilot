@@ -20,6 +20,8 @@ app:
   jwt:
     secret: ${JWT_SECRET:querypilot-dev-secret-change-me-0123456789abcdef0123456789abcdef}
     expiration-ms: ${JWT_EXPIRATION_MS:43200000}
+  agent:
+    base-url: ${QP_AGENT_URL:http://localhost:8000}
 
 management:
   endpoints:
