@@ -2,6 +2,7 @@ package com.querypilot.conversation;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -10,11 +11,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.net.Proxy;
-import java.util.Map;
 
 /**
  * 调用 Python Agent 服务（/ask）的 HTTP 客户端，返回原始 JSON 字符串。
- * 显式用 ObjectMapper 序列化请求体，并禁用代理（本机系统代理 127.0.0.1:7890 会把 localhost 请求转坏）。
+ * 显式用 ObjectMapper 序列化请求体，并禁用代理（本机系统代理会转坏 localhost 请求）。
  */
 @Component
 public class AgentClient {
@@ -30,10 +30,16 @@ public class AgentClient {
         this.objectMapper = objectMapper;
     }
 
-    public String ask(String question, Long datasetId) {
+    public String ask(String question, Long datasetId, String contextJson) {
         String json;
         try {
-            json = objectMapper.writeValueAsString(Map.of("question", question, "dataset_id", datasetId));
+            ObjectNode body = objectMapper.createObjectNode();
+            body.put("question", question);
+            body.put("dataset_id", datasetId);
+            if (contextJson != null && !contextJson.isBlank()) {
+                body.set("context", objectMapper.readTree(contextJson));
+            }
+            json = objectMapper.writeValueAsString(body);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("序列化请求失败", e);
         }

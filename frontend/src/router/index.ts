@@ -11,6 +11,7 @@ const router = createRouter({
       children: [
         { path: '', name: 'workbench', component: () => import('@/views/WorkbenchView.vue') },
         { path: 'conversations/:id', name: 'conversation', component: () => import('@/views/ChatView.vue') },
+        { path: 'admin/query-runs', name: 'admin-query-runs', component: () => import('@/views/AdminAuditView.vue') },
       ],
     },
   ],

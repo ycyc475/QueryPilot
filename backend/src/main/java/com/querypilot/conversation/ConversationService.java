@@ -75,7 +75,7 @@ public class ConversationService {
 
         String agentJson;
         try {
-            agentJson = agentClient.ask(question, conversation.getDatasetId());
+            agentJson = agentClient.ask(question, conversation.getDatasetId(), conversation.getContextJson());
         } catch (Exception e) {
             fail(run, "AGENT_UNAVAILABLE");
             throw new BusinessException(HttpStatus.BAD_GATEWAY, "查询服务不可用");
@@ -101,14 +101,20 @@ public class ConversationService {
         long durationMs = node.path("duration_ms").asLong();
         int rowCount = node.path("row_count").asInt();
 
+        String queryPlanJson = node.path("query_plan").toString();
+
         run.setStatus("SUCCEEDED");
         run.setValidationStatus("PASSED");
         run.setSqlText(sql);
-        run.setQueryPlanJson(node.path("query_plan").toString());
+        run.setQueryPlanJson(queryPlanJson);
         run.setChartSpecJson(node.path("chart").toString());
         run.setDurationMs(durationMs);
         run.setRowCount(rowCount);
         queryRunRepository.save(run);
+
+        // 保存多轮上下文（供下一轮追问继承）
+        conversation.setContextJson(queryPlanJson);
+        conversationRepository.save(conversation);
 
         saveMessage(conversationId, "assistant", summary);
 

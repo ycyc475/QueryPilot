@@ -2,6 +2,21 @@
 
 > 需求基线：根目录 `QueryPilot_对话式数据分析平台_PRD_v0.1.md`。本文件每批编码后更新。
 
+## 当前阶段：第五阶段（多轮与可靠性）— ✅ 已完成
+
+阶段目标（PRD §11 阶段5）：结构化上下文、错误恢复、审计。
+
+| 批次 | 内容 | 状态 | 验证 |
+|---|---|---|---|
+| B16 | 多轮上下文继承（指标/时间/维度继承 + filter 合并） | ✅ | 「只看华东，按省份」→继承指标+时间+华东过滤 |
+| B17 | 管理员审计页（query_runs 历史） | ✅ | admin 200（7 记录）、demo 403 |
+| B18 | 错误恢复（超时降级重试一次） | ✅ | agent 35 pytest |
+
+**第五阶段验收**：
+- ✅ 多轮追问：query_plan 存 `conversations.context_json`，追问继承 metric/time_range/dimensions，filters 按字段覆盖合并（PRD §5）。
+- ✅ 审计：`GET /api/admin/query-runs`（ADMIN）返回历史/状态/耗时/行数/错误码；前端「查询审计」页。
+- ✅ 错误分类 + 有限修复：executor 分类 timeout/permission/syntax；超时降级 limit 重试一次，不无限循环（F11）。
+
 ## 当前阶段：第四阶段（Agent 与图表）— ✅ 已完成
 
 阶段目标（PRD §11 阶段4）：问答返回图表、SQL、结论。意图解析先确定性（无 LLM，PRD §12#7）。
@@ -90,9 +105,9 @@
 - ✅ 管理员编辑：`PUT /api/admin/metrics/{id}`、`PUT /api/admin/columns/{id}`；ADMIN 角色才可访问（demo/ANALYST 返回 403）。
 - ✅ 白名单：召回与 schema 只返回 `is_accessible=true` 的表。
 
-## 下一步（第五阶段：多轮与可靠性，PRD §11 阶段5）
+## 下一步（第六阶段：评测与交付，PRD §11 阶段6）
 
-1. 多轮上下文：结构化 `analysis_context`（metric/time_range/dimensions/filters）继承与合并。
-2. 错误恢复：SQL 错误分类 + 有限次数修复（F11）。
-3. 查询审计页（管理员）：query_runs 历史、耗时、失败原因。
-4. SSE 事件流（可选，当前同步返回已够演示）。
+1. 评测：固定问答集（≥50 条覆盖单表/JOIN/聚合/时间/追问/歧义/异常），SQL 正确率、任务成功率、SQL 拦截正确率、耗时统计，一键回归并生成报告（F13）。
+2. 性能报告：P50/P95 耗时（目标 10–15s 内完整分析，以实测为准）。
+3. 交付：Docker Compose 一键启动全部服务、README 补全、示例提问、架构说明、可向面试官演示。
+4. 可选增强（后续版本）：LLM 接入（语义识别）、embedding/pgvector 召回、SSE 流式。

@@ -1,9 +1,11 @@
 """确定性意图解析：自然语言 → QueryPlan（关键词/词典，无 LLM，PRD §12#7）。
 
-覆盖演示问题所需口径；多轮上下文继承（"只看华东"）留阶段 5。
+支持多轮上下文合并（PRD §5 / F08）：新问题未指定的 metric/time_range/dimensions 继承上一轮，
+filters 按字段覆盖合并（追问「只看华东」加 region 过滤、保留原指标与时间范围）。
 """
 
 import re
+from typing import Optional
 
 from .query_plan import Filter, QueryPlan
 
@@ -34,45 +36,62 @@ TIME_KEYWORDS = {
 
 REGIONS = ["华东", "华北", "华南", "西南", "华中", "东北", "西北"]
 
-# 类别对比维度 → 排序用 metric_desc（排行）；时间趋势 → dimension_asc
 RANKING_DIMENSIONS = {"province", "region", "channel", "status", "month"}
 
 
-def parse_question(question: str) -> QueryPlan:
+def parse_question(question: str, context: Optional[dict] = None) -> QueryPlan:
     q = question or ""
+    ctx = context or {}
 
     metric = _first_match(q, METRIC_KEYWORDS)
+    dimensions = _detect_dimensions(q)
+    time_range = _first_match(q, TIME_KEYWORDS)
+    filters = [Filter(field="region", op="=", value=r) for r in REGIONS if r in q]
+
+    # 多轮合并：缺失项继承上一轮
+    if metric is None:
+        metric = ctx.get("metric")
+    if not time_range:
+        time_range = ctx.get("time_range")
+    if not dimensions:
+        dimensions = ctx.get("dimensions") or []
+    filters = _merge_filters(ctx.get("filters") or [], filters)
+
     if metric is None:
         raise IntentError("无法识别指标，请使用「实付销售额 / 订单量 / 客单价」等")
-
-    dimensions = [name for name, kws in DIMENSION_KEYWORDS.items() if any(k in q for k in kws)]
-    # 去重且保留顺序
-    dimensions = list(dict.fromkeys(dimensions))
-
-    time_range = _first_match(q, TIME_KEYWORDS)
-
-    filters = []
-    for region in REGIONS:
-        if region in q:
-            filters.append(Filter(field="region", op="=", value=region))
-            break
-
     if not dimensions:
         dimensions = ["date"]
 
     sort = "metric_desc" if any(d in RANKING_DIMENSIONS for d in dimensions) else "dimension_asc"
-
-    limit = 1000
-    m = re.search(r"前\s*(\d+)", q)
-    if m:
-        limit = int(m.group(1))
-    elif sort == "metric_desc":
-        limit = 10
+    limit = _detect_limit(q, sort)
 
     return QueryPlan(
         metric=metric, dimensions=dimensions, filters=filters,
         time_range=time_range, sort=sort, limit=limit,
     )
+
+
+def _detect_dimensions(text: str) -> list:
+    dims = []
+    for name, kws in DIMENSION_KEYWORDS.items():
+        if any(k in text for k in kws):
+            dims.append(name)
+    return list(dict.fromkeys(dims))
+
+
+def _merge_filters(prev: list, new: list) -> list:
+    merged = [Filter(field=f["field"], op=f.get("op", "="), value=f.get("value")) for f in prev]
+    for nf in new:
+        merged = [f for f in merged if f.field != nf.field]
+        merged.append(nf)
+    return merged
+
+
+def _detect_limit(text: str, sort: str) -> int:
+    m = re.search(r"前\s*(\d+)", text)
+    if m:
+        return int(m.group(1))
+    return 10 if sort == "metric_desc" else 1000
 
 
 def _first_match(text: str, keyword_map: dict) -> str | None:

@@ -59,3 +59,16 @@ export interface QueryRunResult {
   summary: string
   durationMs: number
 }
+
+export interface QueryRun {
+  id: number
+  conversationId: number
+  question: string
+  status: string
+  validationStatus: string | null
+  sqlText: string | null
+  durationMs: number | null
+  rowCount: number | null
+  errorCode: string | null
+  createdAt: string | null
+}

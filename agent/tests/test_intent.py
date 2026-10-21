@@ -59,6 +59,25 @@ def test_chart_time_is_line_category_is_bar():
     assert recommend_chart(QueryPlan(metric="paid_sales", dimensions=["province"]))["type"] == "bar"
 
 
+def test_inherits_metric_and_time_from_context():
+    ctx = {"metric": "paid_sales", "dimensions": ["date"], "filters": [],
+           "time_range": "last_30_days", "sort": "dimension_asc", "limit": 1000}
+    plan = parse_question("只看华东地区，按省份拆分", ctx)
+    assert plan.metric == "paid_sales"
+    assert plan.dimensions == ["province"]
+    assert plan.time_range == "last_30_days"
+    assert plan.filters[0].value == "华东"
+
+
+def test_inherits_when_only_dimension_changes():
+    ctx = {"metric": "order_count", "dimensions": ["date"], "filters": [],
+           "time_range": "last_7_days", "sort": "dimension_asc", "limit": 1000}
+    plan = parse_question("改按省份", ctx)
+    assert plan.metric == "order_count"
+    assert plan.dimensions == ["province"]
+    assert plan.time_range == "last_7_days"
+
+
 def test_summary_not_empty_and_mentions_total():
     from app.query_plan import QueryPlan
     columns = [{"name": "date", "type": "date"}, {"name": "metric_value", "type": "numeric"}]

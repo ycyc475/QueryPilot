@@ -1,7 +1,11 @@
 <template>
   <el-container class="layout">
     <el-header class="header">
-      <span class="brand">QueryPilot · 对话式数据分析</span>
+      <div class="left">
+        <span class="brand">QueryPilot</span>
+        <el-button link @click="router.push({ name: 'workbench' })">工作台</el-button>
+        <el-button v-if="isAdmin" link @click="router.push({ name: 'admin-query-runs' })">查询审计</el-button>
+      </div>
       <div class="user-area">
         <span class="username">{{ auth.user?.displayName || auth.user?.email || '' }}</span>
         <el-button link type="primary" @click="onLogout">退出登录</el-button>
@@ -14,12 +18,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const auth = useAuthStore()
+
+const isAdmin = computed(() => auth.user?.role === 'ADMIN')
 
 function onLogout() {
   auth.logout()
@@ -40,6 +46,11 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid #e4e7ed;
+}
+.left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 .brand {
   font-weight: 600;

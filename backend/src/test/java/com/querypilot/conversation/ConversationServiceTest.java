@@ -45,7 +45,7 @@ class ConversationServiceTest {
                  "rows":[["2026-10-19",100.0]],"row_count":1,
                  "chart":{"type":"line","x_field":"date","y_field":"metric_value"},
                  "summary":"共 1 条结果","duration_ms":12}""";
-        when(agentClient.ask("最近30天销售额", 1L)).thenReturn(agentJson);
+        when(agentClient.ask("最近30天销售额", 1L, null)).thenReturn(agentJson);
 
         when(queryRunRepository.save(any(QueryRun.class))).thenAnswer(inv -> {
             QueryRun run = inv.getArgument(0);

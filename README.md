@@ -2,7 +2,7 @@
 
 > 全栈 + AI Agent 作品集项目。用户以自然语言提问，系统检索获授权的数据表结构及业务口径，生成并校验只读 SQL，执行后返回图表、明细与可追溯的结论。
 
-需求基线：根目录 `QueryPilot_对话式数据分析平台_PRD_v0.1.md`。进度与验收：`docs/PROGRESS.md`。
+需求基线：根目录 `QueryPilot_对话式数据分析平台_PRD_v0.1.md`。进度与验收：`docs/PROGRESS.md`。**项目总结与上手指南（面向新人，强烈推荐先读）：`docs/PROJECT_GUIDE.md`**。
 
 ## 当前进度
 
